@@ -1,36 +1,47 @@
 pipeline {
 
- agent any
+    agent any
 
-tools {
-    jdk 'JAVA_HOME'
-    maven 'M2_HOME'
-}
+    tools {
+        // Ces outils doivent être configurés dans Jenkins -> Global Tool Configuration
+        jdk 'JAVA_HOME'
+        maven 'M2_HOME'
+    }
 
- stages {
+    stages {
 
- stage('GIT') {
+        stage('Checkout') {
+            steps {
+                git branch: 'master',
+                    url: 'https://github.com/hwafa/timesheetproject.git'
+            }
+        }
 
-           steps {
+        stage('Build & Compile') {
+            steps {
+                sh 'mvn clean compile'
+            }
+        }
 
-               git branch: 'master',
+        stage('Package - Build JAR') {
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
 
-               url: ' https://github.com/hwafa/timesheetproject.git'
+        stage('Archive Artifact') {
+            steps {
+                archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
+            }
+        }
+    }
 
-          }
-
-     }
-
- stage ('Compile Stage') {
-
- steps {
-
- sh 'mvn clean compile'
-
- }
-
- }
-
- }
-
+    post {
+        success {
+            echo "✅ Build & Packaging successful ! Le livrable JAR est prêt."
+        }
+        failure {
+            echo "❌ Build failed. Vérifie les logs Maven."
+        }
+    }
 }
